@@ -8,7 +8,7 @@ import { parseArgs } from 'node:util'
 import { downloadArtifact } from '@electron/get'
 import extractZip from 'extract-zip'
 import { readPrimaryRuntime } from '../../../packages/skill/tool-workspace-dependencies/src/index.ts'
-import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
+import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths, type DesktopReleaseTargetPlatform } from './desktop-build-paths.mjs'
 import { packagingStep } from './packaging-step.mjs'
 import { preparePrimaryRuntime } from './prepare-primary-runtime.ts'
 import { prepareDesktopCli } from './prepare-cli.ts'
@@ -17,10 +17,8 @@ import { prepareCommandLink } from './prepare-command-link.ts'
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
 const RUNTIME_ROOT = BUILD_PATHS.runtime
 
-type DesktopTarget = ReturnType<typeof desktopTargetPlatform>
-
 /** Extract the target Electron distribution and return its embedded Node version. */
-async function prepareElectron({ platform, arch }: DesktopTarget): Promise<string> {
+async function prepareElectron({ platform, arch }: DesktopReleaseTargetPlatform): Promise<string> {
   const require = createRequire(import.meta.url)
   const { version } = require('electron/package.json') as { version: string }
   const archive = await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'download:electron',
@@ -33,7 +31,7 @@ async function prepareElectron({ platform, arch }: DesktopTarget): Promise<strin
   }).trim()
 }
 
-function prepareCli({ platform, arch }: DesktopTarget): void {
+function prepareCli({ platform, arch }: DesktopReleaseTargetPlatform): void {
   cpSync(join(import.meta.dirname, 'node-bin'), join(RUNTIME_ROOT, 'bin'), { recursive: true })
   chmodSync(join(RUNTIME_ROOT, 'bin', 'node'), 0o755)
   const cli = join(RUNTIME_ROOT, 'cli')

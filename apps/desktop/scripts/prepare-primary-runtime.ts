@@ -4,18 +4,21 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { preparePrimaryRuntime as preparePayload, smokePrimaryRuntime as smokePayload } from '../../../scripts/primary-runtime/prepare.ts'
 import { parsePrimaryRuntime, workspaceDependencyPaths } from '../../../packages/skill/tool-workspace-dependencies/src/index.ts'
-import { resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
+import { desktopTargetBuildPaths, resolveDesktopBuildTarget, type DesktopDevelopmentTarget } from './desktop-build-paths.mjs'
 import { scrubWindowsSigningEnvironment } from './windows-sign.mjs'
 
 /**
- * Prepare Desktop resources for its selected packaging target.
- * @param options - Signed Windows packaging defers execution until its supervised signing stage.
+ * Prepare Desktop resources for one launch target.
+ * @param options - Preparation inputs.
+ * @param options.deferSmoke - Signed Windows packaging defers execution until its supervised signing stage.
+ * @param options.target - Launch target whose payload is prepared; defaults to the packaging target selected by the environment.
  * @returns Resolves after preparation and, unless deferred, native-target execution checks.
  */
-export async function preparePrimaryRuntime(options: { deferSmoke?: boolean } = {}): Promise<void> {
-  const paths = resolveDesktopTargetBuildPaths()
+export async function preparePrimaryRuntime(options: { deferSmoke?: boolean; target?: DesktopDevelopmentTarget } = {}): Promise<void> {
+  const target = options.target ?? resolveDesktopBuildTarget()
+  const paths = desktopTargetBuildPaths(target)
   const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }
-  await preparePayload({ target: resolveDesktopBuildTarget(), output: paths.runtime, cache: paths.downloads, version })
+  await preparePayload({ target, output: paths.runtime, cache: paths.downloads, version })
   if (!options.deferSmoke) smokePrimaryRuntime(join(paths.runtime, 'primary-runtime'))
 }
 

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { createDevelopmentProjectMetadata, createPluginProfile } from '../src/project-manager.ts'
 import { removeOwnedDirectory } from '../src/owned-directory.ts'
 import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
-import { desktopTargetPlatform, developmentRuntimeDirectory, resolveDesktopBuildTarget } from './desktop-build-paths.mjs'
+import { desktopTargetPlatform, developmentRuntimeDirectory, resolveDesktopDevelopmentTarget } from './desktop-build-paths.mjs'
 
 const repo = resolve(import.meta.dirname, '../../..')
 const interactive = process.argv.includes('--interactive')
@@ -28,7 +28,7 @@ try {
     nodeVersion: execFileSync(electron, ['-p', 'process.versions.node'],
       { encoding: 'utf8', env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, windowsHide: true }).trim(),
     pnpmVersion: pnpm.version, hostProtocolVersion: DESKTOP_HOST_PROTOCOL_VERSION }
-  const target = resolveDesktopBuildTarget()
+  const target = resolveDesktopDevelopmentTarget()
   createDevelopmentProjectMetadata(project, release)
   createPluginProfile(profile)
   await writeFile(join(project, 'desktop-runtime.json'), JSON.stringify({

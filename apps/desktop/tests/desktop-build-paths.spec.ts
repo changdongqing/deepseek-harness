@@ -5,6 +5,7 @@ import {
   desktopTargetPlatform,
   developmentRuntimeDirectory,
   resolveDesktopBuildTarget,
+  resolveDesktopDevelopmentTarget,
   resolveDesktopTargetBuildPaths,
 } from '../scripts/desktop-build-paths.mjs'
 
@@ -75,11 +76,20 @@ describe('desktop build paths', () => {
       .toContain(join('targets', 'win-x64', 'runtime', 'primary-runtime'))
   })
 
+  it('prepares a Linux host development runtime even though Linux has no release target', () => {
+    expect(resolveDesktopDevelopmentTarget({}, 'linux', 'x64')).toBe('linux-x64')
+    expect(resolveDesktopDevelopmentTarget({}, 'linux', 'arm64')).toBe('linux-arm64')
+    expect(developmentRuntimeDirectory({}, 'linux', 'x64'))
+      .toContain(join('targets', 'linux-x64', 'runtime', 'primary-runtime'))
+    expect(desktopTargetPlatform('linux-x64')).toEqual({ platform: 'linux', arch: 'x64' })
+    expect(desktopTargetPlatform('linux-arm64')).toEqual({ platform: 'linux', arch: 'arm64' })
+  })
+
   it('maps every target to the platform and architecture of the payload it prepares', () => {
     expect(desktopTargetPlatform('mac-arm64')).toEqual({ platform: 'darwin', arch: 'arm64' })
     expect(desktopTargetPlatform('mac-x64')).toEqual({ platform: 'darwin', arch: 'x64' })
     expect(desktopTargetPlatform('win-x64')).toEqual({ platform: 'win32', arch: 'x64' })
-    expect(() => desktopTargetPlatform('linux-x64' as 'mac-x64')).toThrow(/unsupported target/u)
+    expect(() => desktopTargetPlatform('linux-ia32' as 'mac-x64')).toThrow(/unsupported target/u)
   })
 
   it('resolves environment overrides and rejects unsupported targets', () => {
@@ -89,6 +99,9 @@ describe('desktop build paths', () => {
     }, 'darwin', 'arm64')).toBe('mac-x64')
     expect(resolveDesktopBuildTarget({}, 'win32', 'x64')).toBe('win-x64')
     expect(() => resolveDesktopBuildTarget({}, 'linux', 'x64')).toThrow(/unsupported target/u)
-    expect(() => desktopTargetBuildPaths('linux-x64' as 'mac-x64')).toThrow(/unsupported target/u)
+    expect(resolveDesktopDevelopmentTarget({ DSH_DESKTOP_TARGET_PLATFORM: 'linux', DSH_DESKTOP_TARGET_ARCH: 'arm64' }, 'linux', 'x64'))
+      .toBe('linux-arm64')
+    expect(() => resolveDesktopDevelopmentTarget({}, 'freebsd', 'x64')).toThrow(/unsupported development target/u)
+    expect(() => desktopTargetBuildPaths('linux-ia32' as 'mac-x64')).toThrow(/unsupported target/u)
   })
 })

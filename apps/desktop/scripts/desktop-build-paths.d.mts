@@ -1,5 +1,14 @@
 import type { DesktopAutoUpdateTarget } from './desktop-auto-update-environment.mjs'
 
+/** Release target, or the Linux host target an unpackaged development launch prepares. */
+export type DesktopDevelopmentTarget = DesktopAutoUpdateTarget | 'linux-x64' | 'linux-arm64'
+
+/** Platform and architecture of the payload a release target prepares. */
+export interface DesktopReleaseTargetPlatform {
+  readonly platform: 'darwin' | 'win32'
+  readonly arch: 'arm64' | 'x64'
+}
+
 /** Mutable target directories plus shared download and package caches. */
 export interface DesktopTargetBuildPaths {
   readonly root: string
@@ -32,21 +41,41 @@ export function resolveDesktopBuildTarget(
 ): DesktopAutoUpdateTarget
 
 /**
- * Return the mutable preparation and artifact directories owned by one release target.
+ * Resolve the build target an unpackaged development launch prepares.
+ * @param env - Development environment.
+ * @param hostPlatform - Build-host platform used when no target override exists.
+ * @param hostArch - Build-host architecture used when no target override exists.
+ * @returns Supported development target name.
+ */
+export function resolveDesktopDevelopmentTarget(
+  env?: NodeJS.ProcessEnv,
+  hostPlatform?: NodeJS.Platform,
+  hostArch?: string,
+): DesktopDevelopmentTarget
+
+/**
+ * Return the mutable preparation and artifact directories owned by one release or development target.
  * @param target - Supported Desktop target name.
- * @param environment - Packaging environment with an optional absolute cache directory.
+ * @param environment - Packaging or development environment with an optional absolute cache directory.
  * @returns Target paths plus shared download and package caches.
  */
-export function desktopTargetBuildPaths(target: DesktopAutoUpdateTarget, environment?: NodeJS.ProcessEnv): DesktopTargetBuildPaths
+export function desktopTargetBuildPaths(target: DesktopDevelopmentTarget, environment?: NodeJS.ProcessEnv): DesktopTargetBuildPaths
 
 /**
  * Return the platform and architecture of the payload one release target prepares.
  * Windows is prepared as x64 only, so this differs from the build host on an arm64 Windows machine.
- * @param target - Supported Desktop target name.
+ * @param target - Supported Desktop release target name.
  * @returns Platform and architecture of the prepared payload.
  */
-export function desktopTargetPlatform(target: DesktopAutoUpdateTarget): {
-  readonly platform: 'darwin' | 'win32'
+export function desktopTargetPlatform(target: DesktopAutoUpdateTarget): DesktopReleaseTargetPlatform
+
+/**
+ * Return the platform and architecture of the payload one development target prepares.
+ * @param target - Supported Desktop development target name.
+ * @returns Platform and architecture of the prepared payload.
+ */
+export function desktopTargetPlatform(target: DesktopDevelopmentTarget): {
+  readonly platform: 'darwin' | 'win32' | 'linux'
   readonly arch: 'arm64' | 'x64'
 }
 
@@ -64,11 +93,24 @@ export function resolveDesktopTargetBuildPaths(
 ): DesktopTargetBuildPaths
 
 /**
- * Resolve the primary-runtime directory an unpackaged development launch uses.
- * @param env - Packaging environment.
+ * Resolve the paths owned by the target selected in a development environment.
+ * @param env - Development environment.
  * @param hostPlatform - Build-host platform used when no target override exists.
  * @param hostArch - Build-host architecture used when no target override exists.
- * @returns Primary-runtime directory prepared for the selected target.
+ * @returns Selected development target paths.
+ */
+export function resolveDesktopDevelopmentTargetPaths(
+  env?: NodeJS.ProcessEnv,
+  hostPlatform?: NodeJS.Platform,
+  hostArch?: string,
+): DesktopTargetBuildPaths
+
+/**
+ * Resolve the primary-runtime directory an unpackaged development launch uses.
+ * @param env - Development environment.
+ * @param hostPlatform - Build-host platform used when no target override exists.
+ * @param hostArch - Build-host architecture used when no target override exists.
+ * @returns Primary-runtime directory prepared for the selected development target.
  */
 export function developmentRuntimeDirectory(
   env?: NodeJS.ProcessEnv,
